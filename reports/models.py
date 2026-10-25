@@ -1,7 +1,14 @@
 from django.conf import settings
 from django.db import models
+import uuid
 
 class Report(models.Model):
+    class Stage(models.TextChoices):
+        UNKNOWN = "unknown", "Unknown"
+        SYNTHESIS = "synthesis", "Synthesis"
+        IMPLEMENTATION = "implementation", "Implementation"
+        ROUTE_DESIGN = "route_design", "Route Design"
+
     class ReportType(models.TextChoices):
         TIMING = "timing", "Timing Summary"
         UTILIZATION = "utilization", "Utilization"
@@ -19,6 +26,9 @@ class Report(models.Model):
         on_delete=models.CASCADE,
         related_name="reports",
     )
+    run_id = models.UUIDField(default=uuid.uuid4, db_index=True)
+    stage = models.CharField(max_length=20, choices=Stage.choices, default=Stage.UNKNOWN)
+    device_part = models.CharField(max_length=120, blank=True)
 
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -43,6 +53,10 @@ class Report(models.Model):
 
     uploaded_at = models.DateTimeField(auto_now_add=True)
     error_message = models.TextField(blank=True)
+    parsed_metrics = models.JSONField(null=True, blank=True)
+    normalized_metrics = models.JSONField(default=dict, blank=True)
+    analysis_coverage = models.JSONField(default=dict, blank=True)
+    source_metadata = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
         return self.name
